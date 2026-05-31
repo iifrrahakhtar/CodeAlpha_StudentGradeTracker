@@ -1,45 +1,51 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Main extends JFrame {
 
-    private ArrayList<Double> grades = new ArrayList<>();
-    private DefaultListModel<String> listModel = new DefaultListModel<>();
+    // --- Data Models ---
+    private final ArrayList<StudentEntry> studentList = new ArrayList<>();
+    private final DefaultListModel<String> listModel = new DefaultListModel<>();
+    private DefaultTableModel summaryTableModel;
 
-    // UI Elements for Live Updates
+    // --- UI Controls ---
     private JLabel lblTotalStudents, lblAverage, lblHighest, lblLowest;
     private JTextField txtStudentName, txtGrade;
     private JList<String> gradeLogList;
     private ChartPanel chartPanel;
 
-    // Placeholders
     private final String NAME_PROMPT = "Student Name (e.g., Alex)";
     private final String GRADE_PROMPT = "Grade (0 - 100)";
 
-    private final Color COLOR_BG_MAIN = new Color(23, 15, 38);        // Deep Dark Purple Background
-    private final Color COLOR_BG_CARD = new Color(36, 25, 56);        // Slightly Lighter Purple for Cards/Sidebar
-    private final Color COLOR_ACCENT = new Color(187, 134, 252);     // Bright Neon Purple / Pastel Orchid
-    private final Color COLOR_TEXT_MAIN = Color.WHITE;
-    private final Color COLOR_TEXT_MUTED = new Color(190, 175, 210); // Soft Light Lavender for Placeholders
-    private final Color COLOR_BORDER = new Color(74, 52, 107);        // Muted Purple Border
+    // ✨ Palette: Pastel Cherry Blossom & White
+    private final Color COLOR_BG_MAIN = new Color(255, 240, 242);     // Soft Pastel Pink
+    private final Color COLOR_BG_CARD = Color.WHITE;                  // Crisp Snow White Cards
+    private final Color COLOR_ACCENT = new Color(216, 27, 96);        // Deep Berry Pink / Rose Accent
+    private final Color COLOR_TEXT_MAIN = new Color(66, 50, 54);      // Dark Cocoa/Charcoal for High Contrast
+    private final Color COLOR_TEXT_MUTED = new Color(160, 140, 145);  // Soft Muted Rose Gray for Placeholders
+    private final Color COLOR_BORDER = new Color(242, 215, 219);      // Gentle Pinkish-Gray Border
 
     public Main() {
         setTitle("CodeAlpha | Premium Grade Dashboard");
-        setSize(1050, 650);
+        setSize(1100, 720);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(COLOR_BG_MAIN);
         setLayout(new BorderLayout());
 
-        // 1. --- SIDEBAR ---
+        // 1. --- SIDEBAR (CONTROL PANEL) ---
         JPanel sidebar = new JPanel();
         sidebar.setBackground(COLOR_BG_CARD);
-        sidebar.setPreferredSize(new Dimension(280, 650));
-        sidebar.setBorder(new EmptyBorder(25, 20, 25, 20));
+        sidebar.setPreferredSize(new Dimension(290, 720));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, COLOR_BORDER));
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBorder(new EmptyBorder(25, 20, 25, 20));
 
         JLabel sidebarTitle = new JLabel("Grade Control Panel");
         sidebarTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -49,27 +55,27 @@ public class Main extends JFrame {
         txtStudentName = createCustomTextField(NAME_PROMPT);
         txtGrade = createCustomTextField(GRADE_PROMPT);
 
-        JButton btnAdd = new JButton("Add Grade");
-        styleButton(btnAdd, COLOR_ACCENT, new Color(23, 15, 38), true);
+        JButton btnAdd = new JButton("Add Entry");
+        styleButton(btnAdd, COLOR_ACCENT, Color.WHITE, true);
         btnAdd.addActionListener(e -> handleAddGrade());
 
-        JButton btnReset = new JButton("Reset Data");
-        styleButton(btnReset, COLOR_BG_CARD, new Color(255, 107, 107), false);
-        btnReset.setBorder(new LineBorder(new Color(255, 107, 107), 1, true));
+        JButton btnReset = new JButton("Reset All Data");
+        styleButton(btnReset, COLOR_BG_CARD, new Color(217, 48, 37), false);
+        btnReset.setBorder(new LineBorder(new Color(217, 48, 37), 1, true));
         btnReset.addActionListener(e -> handleReset());
 
-        JLabel lblLogTitle = new JLabel("Grade Log");
-        lblLogTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        lblLogTitle.setForeground(new Color(150, 135, 170));
+        JLabel lblLogTitle = new JLabel("Audit Activity Log");
+        lblLogTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblLogTitle.setForeground(COLOR_TEXT_MUTED);
         lblLogTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         gradeLogList = new JList<>(listModel);
-        gradeLogList.setBackground(new Color(51, 37, 77));
+        gradeLogList.setBackground(new Color(253, 250, 251));
         gradeLogList.setForeground(COLOR_TEXT_MAIN);
-        gradeLogList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        JScrollPane scrollPane = new JScrollPane(gradeLogList);
-        scrollPane.setBorder(new LineBorder(COLOR_BORDER, 1, true));
-        scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gradeLogList.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JScrollPane logScrollPane = new JScrollPane(gradeLogList);
+        logScrollPane.setBorder(new LineBorder(COLOR_BORDER, 1, true));
+        logScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         sidebar.add(sidebarTitle);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -82,12 +88,12 @@ public class Main extends JFrame {
         sidebar.add(btnReset);
         sidebar.add(Box.createRigidArea(new Dimension(0, 25)));
         sidebar.add(lblLogTitle);
-        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(scrollPane);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 8)));
+        sidebar.add(logScrollPane);
 
         add(sidebar, BorderLayout.WEST);
 
-        // 2. --- MAIN DASHBOARD AREA ---
+        // 2. --- MAIN CONTAINER AREA ---
         JPanel mainContent = new JPanel(new BorderLayout(0, 20));
         mainContent.setBackground(COLOR_BG_MAIN);
         mainContent.setBorder(new EmptyBorder(25, 25, 25, 25));
@@ -97,17 +103,17 @@ public class Main extends JFrame {
         mainTitle.setForeground(COLOR_TEXT_MAIN);
         mainContent.add(mainTitle, BorderLayout.NORTH);
 
-        JPanel centerWrapper = new JPanel(new BorderLayout(0, 25));
+        JPanel centerWrapper = new JPanel(new BorderLayout(0, 20));
         centerWrapper.setBackground(COLOR_BG_MAIN);
 
+        // --- KPI TOP CARDS ROW ---
         JPanel kpiPanel = new JPanel(new GridLayout(1, 4, 15, 0));
         kpiPanel.setBackground(COLOR_BG_MAIN);
 
-        // Styled KPI Cards with unique modern bottom accent lines
-        JPanel cardTotal = createKPICard("TOTAL STUDENTS", "0", new Color(106, 90, 205));
-        JPanel cardAvg = createKPICard("AVERAGE SCORE", "0.0%", new Color(0, 201, 167));
-        JPanel cardHigh = createKPICard("HIGHEST SCORE", "0.0", new Color(255, 165, 0));
-        JPanel cardLow = createKPICard("LOWEST SCORE", "0.0", new Color(255, 95, 86));
+        JPanel cardTotal = createKPICard("TOTAL STUDENTS", "0", new Color(136, 14, 79));  // Deep Magenta
+        JPanel cardAvg = createKPICard("CLASS AVERAGE", "0.0%", new Color(46, 125, 50)); // Emerald Green
+        JPanel cardHigh = createKPICard("HIGHEST MARK", "0.0%", new Color(230, 81, 0));  // Dark Amber
+        JPanel cardLow = createKPICard("LOWEST MARK", "0.0%", new Color(198, 40, 40));   // Deep Red
 
         lblTotalStudents = (JLabel) cardTotal.getClientProperty("valueLabel");
         lblAverage = (JLabel) cardAvg.getClientProperty("valueLabel");
@@ -120,9 +126,38 @@ public class Main extends JFrame {
         kpiPanel.add(cardLow);
         centerWrapper.add(kpiPanel, BorderLayout.NORTH);
 
-        chartPanel = new ChartPanel();
-        centerWrapper.add(chartPanel, BorderLayout.CENTER);
+        // --- DATA INTERFACE SPLIT (Table Top, Compact Graph Bottom) ---
+        JPanel splitWorkspace = new JPanel(new GridLayout(2, 1, 0, 20));
+        splitWorkspace.setBackground(COLOR_BG_MAIN);
 
+        // A. Table Grid View Panel
+        JPanel tableContainer = new JPanel(new BorderLayout());
+        tableContainer.setBackground(COLOR_BG_CARD);
+        tableContainer.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(15, 15, 15, 15)));
+
+        JLabel tableLabel = new JLabel("Ranked Performance Summary Statement");
+        tableLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        tableLabel.setForeground(COLOR_TEXT_MAIN);
+        tableLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
+        tableContainer.add(tableLabel, BorderLayout.NORTH);
+
+     
+        String[] headers = {"S.No.", "Student Name", "Marks Obtained", "Class Position"};
+        summaryTableModel = new DefaultTableModel(headers, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+
+        JTable table = new JTable(summaryTableModel);
+        styleSummaryTable(table);
+        tableContainer.add(new JScrollPane(table), BorderLayout.CENTER);
+        splitWorkspace.add(tableContainer);
+
+
+        chartPanel = new ChartPanel();
+        splitWorkspace.add(chartPanel);
+
+        centerWrapper.add(splitWorkspace, BorderLayout.CENTER);
         mainContent.add(centerWrapper, BorderLayout.CENTER);
         add(mainContent, BorderLayout.CENTER);
     }
@@ -131,16 +166,15 @@ public class Main extends JFrame {
         JTextField field = new JTextField();
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         field.setPreferredSize(new Dimension(240, 40));
-        field.setBackground(new Color(51, 37, 77));
+        field.setBackground(new Color(253, 245, 246));
         field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         field.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(COLOR_BORDER, 1, true),
-                new EmptyBorder(0, 10, 0, 10)
+                new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(0, 12, 0, 12)
         ));
 
         field.setText(prompt);
         field.setForeground(COLOR_TEXT_MUTED);
-        field.setCaretColor(COLOR_TEXT_MAIN);
+        field.setCaretColor(COLOR_ACCENT);
 
         field.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
@@ -180,19 +214,20 @@ public class Main extends JFrame {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 g.setColor(accentColor);
-                g.fillRect(0, getHeight() - 5, getWidth(), 5);
+                g.fillRect(0, 0, 4, getHeight());
             }
         };
         card.setBackground(COLOR_BG_CARD);
-        card.setLayout(new GridLayout(2, 1, 0, 0));
-        card.setBorder(new EmptyBorder(12, 15, 12, 15));
+        card.setLayout(new GridLayout(2, 1, 0, 2));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(COLOR_BORDER, 1, true), new EmptyBorder(12, 18, 12, 15)));
 
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblTitle.setForeground(new Color(150, 135, 170));
+        lblTitle.setForeground(COLOR_TEXT_MUTED);
 
         JLabel lblVal = new JLabel(value);
-        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblVal.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblVal.setForeground(COLOR_TEXT_MAIN);
 
         card.add(lblTitle);
@@ -201,12 +236,36 @@ public class Main extends JFrame {
         return card;
     }
 
+    private void styleSummaryTable(JTable table) {
+        table.setRowHeight(30);
+        table.setBackground(COLOR_BG_CARD);
+        table.setForeground(COLOR_TEXT_MAIN);
+        table.setGridColor(COLOR_BORDER);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.getTableHeader().setBackground(new Color(253, 242, 244));
+        table.getTableHeader().setForeground(COLOR_TEXT_MAIN);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        table.getTableHeader().setBorder(new LineBorder(COLOR_BORDER, 1));
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+
+        // Custom width for serial number column
+        table.getColumnModel().getColumn(0).setPreferredWidth(50);
+        table.getColumnModel().getColumn(0).setMaxWidth(70);
+
+        // Center alignment applied to S.No. (Col 0), Marks Obtained (Col 2), and Class Position (Col 3)
+        table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+    }
+
     private void handleAddGrade() {
         String name = txtStudentName.getText().trim();
         String gradeStr = txtGrade.getText().trim();
 
         if (name.isEmpty() || name.equals(NAME_PROMPT)) {
-            name = "Student #" + (grades.size() + 1);
+            name = "Student #" + (studentList.size() + 1);
         }
 
         if (gradeStr.isEmpty() || gradeStr.equals(GRADE_PROMPT)) {
@@ -216,16 +275,15 @@ public class Main extends JFrame {
 
         try {
             double grade = Double.parseDouble(gradeStr);
-
             if (grade < 0 || grade > 100) {
                 JOptionPane.showMessageDialog(this, "Grades must strictly be between 0 and 100.", "Validation Error", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            grades.add(grade);
-            listModel.addElement(name + " — " + grade + "%");
-            chartPanel.addBarData(name, grade);
-            updateMetrics();
+            studentList.add(new StudentEntry(name, grade));
+            listModel.insertElementAt("Added: " + name + " (" + grade + "%)", 0);
+
+            recalculateMetricsAndRanks();
 
             resetFieldToPrompt(txtStudentName, NAME_PROMPT);
             resetFieldToPrompt(txtGrade, GRADE_PROMPT);
@@ -236,47 +294,83 @@ public class Main extends JFrame {
         }
     }
 
+    private void recalculateMetricsAndRanks() {
+        if (studentList.isEmpty()) return;
+
+
+        Collections.sort(studentList, (a, b) -> Double.compare(b.getGrade(), a.getGrade()));
+
+        summaryTableModel.setRowCount(0);
+        chartPanel.clearChart();
+
+        double total = 0;
+
+        StudentEntry highestStudent = studentList.get(0);
+        StudentEntry lowestStudent = studentList.get(0);
+
+        int rank = 1;
+        for (int i = 0; i < studentList.size(); i++) {
+            StudentEntry student = studentList.get(i);
+            double score = student.getGrade();
+            total += score;
+
+            if (score > highestStudent.getGrade()) highestStudent = student;
+            if (score < lowestStudent.getGrade()) lowestStudent = student;
+
+            if (i > 0 && score < studentList.get(i - 1).getGrade()) {
+                rank = i + 1;
+            }
+
+            String positionSuffix = getOrdinalSuffix(rank);
+
+           
+            summaryTableModel.addRow(new Object[]{
+                    String.valueOf(i + 1), student.getName(), String.format("%.1f%%", score), rank + positionSuffix
+            });
+
+            chartPanel.addBarData(student.getName(), score);
+        }
+
+        double average = total / studentList.size();
+
+        lblTotalStudents.setText(String.valueOf(studentList.size()));
+        lblAverage.setText(String.format("%.1f%%", average));
+
+        lblHighest.setText(String.format("%.1f%% (%s)", highestStudent.getGrade(), highestStudent.getName()));
+        lblLowest.setText(String.format("%.1f%% (%s)", lowestStudent.getGrade(), lowestStudent.getName()));
+    }
+
+    private String getOrdinalSuffix(int value) {
+        if (value >= 11 && value <= 13) return "th";
+        switch (value % 10) {
+            case 1:  return "st";
+            case 2:  return "nd";
+            case 3:  return "rd";
+            default: return "th";
+        }
+    }
+
     private void resetFieldToPrompt(JTextField field, String prompt) {
         field.setText(prompt);
         field.setForeground(COLOR_TEXT_MUTED);
     }
 
-    private void updateMetrics() {
-        if (grades.isEmpty()) return;
-
-        double total = 0;
-        double highest = grades.get(0);
-        double lowest = grades.get(0);
-
-        for (double grade : grades) {
-            total += grade;
-            if (grade > highest) highest = grade;
-            if (grade < lowest) lowest = grade;
-        }
-        double average = total / grades.size();
-
-        lblTotalStudents.setText(String.valueOf(grades.size()));
-        lblAverage.setText(String.format("%.1f%%", average));
-        lblHighest.setText(String.format("%.1f", highest));
-        lblLowest.setText(String.format("%.1f", lowest));
-    }
-
     private void handleReset() {
-        grades.clear();
+        studentList.clear();
         listModel.clear();
+        summaryTableModel.setRowCount(0);
         chartPanel.clearChart();
         lblTotalStudents.setText("0");
         lblAverage.setText("0.0%");
-        lblHighest.setText("0.0");
-        lblLowest.setText("0.0");
+        lblHighest.setText("0.0%");
+        lblLowest.setText("0.0%");
         resetFieldToPrompt(txtStudentName, NAME_PROMPT);
         resetFieldToPrompt(txtGrade, GRADE_PROMPT);
     }
-
-    // Custom Chart with matching Purple Glowing Watermark Engine
+    
     private class ChartPanel extends JPanel {
-        private ArrayList<String> names = new ArrayList<>();
-        private ArrayList<Double> values = new ArrayList<>();
+        private final ArrayList<String> names = new ArrayList<>();
+        private final ArrayList<Double> values = new ArrayList<>();
 
         public ChartPanel() {
             setBackground(COLOR_BG_CARD);
@@ -302,70 +396,60 @@ public class Main extends JFrame {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             g2.setColor(COLOR_TEXT_MAIN);
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            g2.drawString("Grade Distribution Visualizer", 20, 30);
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            g2.drawString("Visual Frequency Distribution Ticker", 15, 22);
 
-            // Empty State: Draws a stunning neon purple vector logo watermark
             if (values.isEmpty()) {
                 int centerX = getWidth() / 2;
-                int centerY = getHeight() / 2 - 20;
-
-                // Outer glowing circle
-                g2.setColor(new Color(187, 134, 252, 25));
-                g2.fillOval(centerX - 40, centerY - 40, 80, 80);
-
-                g2.setColor(new Color(187, 134, 252, 70));
-                g2.setStroke(new BasicStroke(2));
-                g2.drawOval(centerX - 40, centerY - 40, 80, 80);
-
-                // Vector Bar Chart Graphics
-                g2.setColor(COLOR_ACCENT);
-                g2.fillRect(centerX - 15, centerY - 5, 8, 20);
-                g2.fillRect(centerX - 3, centerY - 15, 8, 30);
-                g2.fillRect(centerX + 9, centerY - 25, 8, 40);
-
-                // Information prompts
-                g2.setColor(COLOR_TEXT_MAIN);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 15));
-                String msg1 = "No Data Captured Yet";
-                int stringWidth1 = g2.getFontMetrics().stringWidth(msg1);
-                g2.drawString(msg1, centerX - (stringWidth1 / 2), centerY + 70);
-
-                g2.setColor(new Color(150, 135, 170));
-                g2.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                String msg2 = "Please input student details on the left panel to begin.";
-                int stringWidth2 = g2.getFontMetrics().stringWidth(msg2);
-                g2.drawString(msg2, centerX - (stringWidth2 / 2), centerY + 95);
+                int centerY = getHeight() / 2;
+                g2.setColor(COLOR_TEXT_MUTED);
+                g2.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+                String emptyMsg = "No data available to plot visualization scales.";
+                int strW = g2.getFontMetrics().stringWidth(emptyMsg);
+                g2.drawString(emptyMsg, centerX - (strW / 2), centerY + 4);
                 return;
             }
 
-            int chartWidth = getWidth() - 80;
-            int chartHeight = getHeight() - 100;
-            int startX = 50;
-            int startY = getHeight() - 40;
+            int chartHeight = getHeight() - 65;
+            int startX = 45;
+            int startY = getHeight() - 25;
 
-            int barWidth = Math.max(15, (chartWidth / values.size()) - 15);
+            int fixedBarWidth = 45;
+            int customGap = 24;
 
             for (int i = 0; i < values.size(); i++) {
                 double score = values.get(i);
                 int barHeight = (int) ((score / 100.0) * chartHeight);
-                int x = startX + i * (barWidth + 15);
+                int x = startX + i * (fixedBarWidth + customGap);
                 int y = startY - barHeight;
 
-                // Beautiful Purple-to-Dark Purple Gradient bars
-                GradientPaint barGradient = new GradientPaint(x, y, COLOR_ACCENT, x, startY, new Color(74, 34, 117));
+                if (x + fixedBarWidth > getWidth()) break;
+
+                // ✨ Dynamic Color Gradient: Soft light rose on top fading down into dark accent berry pink at the base
+                GradientPaint barGradient = new GradientPaint(
+                        x, y, new Color(244, 143, 177),          // Light pink at the top
+                        x, startY, COLOR_ACCENT                  // Dark accent pink at the bottom
+                );
                 g2.setPaint(barGradient);
-                g2.fillRect(x, y, barWidth, barHeight);
+                g2.fillRect(x, y, fixedBarWidth, barHeight);
 
                 g2.setColor(COLOR_TEXT_MAIN);
-                g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-                g2.drawString(String.format("%.0f%%", score), x, y - 5);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                g2.drawString(String.format("%.0f%%", score), x + (fixedBarWidth / 2) - 10, y - 5);
 
-                g2.setColor(new Color(150, 135, 170));
-                String truncatedName = names.get(i).length() > 8 ? names.get(i).substring(0, 6) + ".." : names.get(i);
-                g2.drawString(truncatedName, x, startY + 18);
+                g2.setColor(COLOR_TEXT_MUTED);
+                String label = names.get(i).length() > 7 ? names.get(i).substring(0, 6) + ".." : names.get(i);
+                g2.drawString(label, x + 2, startY + 14);
             }
         }
+    }
+
+    private static class StudentEntry {
+        private final String name;
+        private final double grade;
+        public StudentEntry(String name, double grade) { this.name = name; this.grade = grade; }
+        public String getName() { return name; }
+        public double getGrade() { return grade; }
     }
 
     public static void main(String[] args) {
