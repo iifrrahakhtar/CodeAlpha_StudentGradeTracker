@@ -1,27 +1,25 @@
-# 📊 CodeAlpha Student Grade Tracker Dashboard
+# Student Performance Dashboard 📊
 
-A premium, cyber-themed desktop application built using **Java Swing**. This project was developed as part of my Java Programming Internship at **CodeAlpha**. It features a modern dark-purple user interface, real-time statistical computations, input data validation, and a custom-painted dynamic bar chart visualizer.
-
----
+A premium, desktop-based student grade tracking and analysis dashboard built with Java Swing. This application provides real-time metric analytics, data tracking logs, and custom-painted graphical insights wrapped in an elegant Pastel Cherry Blossom theme.
 
 ## ✨ Features
-- **Modern Cyberpunk UI:** Designed with a dark purple color palette, glowing pastel orchid accents, and clear layout separation.
-- **Dynamic Data Visualization:** Implements a custom-painted graphing engine that renders real-time animated gradient bar scales as data entries shift.
-- **Instant Analytics Dashboard:** Tracks total students registered, class grade average, highest score, and lowest score dynamically.
-- **Fail-Safe Validation System:** Includes text focus filters for interactive fields and validation checking to block faulty inputs (e.g., negative integers or grades above 100).
+- **Dynamic Grade Logging:** Add student entries seamlessly with automated validation checks (strictly enforces grades between 0–100%).
+- **Live KPI Analytics:** Instantaneous calculations for Total Students, Class Average, Highest Mark, and Lowest Mark (with student name associations).
+- **Ranked Performance Summary:** Automatically sorts students from highest to lowest marks in a structured table, featuring a dedicated **Serial Number (`S.No.`)** registry and ordinal placement suffixes (e.g., 1st, 2nd, 3rd).
+- **Custom Visual Frequency Distribution:** Built-in interactive bar graph showcasing score percentages with a smooth, **inverted premium pastel gradient** (fading from a soft top rose into a deep berry pink base).
+- **Data Flush Capability:** A one-click safety reset button to clear the database and refresh workspace parameters instantly.
 
----
-
-## 🛠️ Technology Stack
-- **Language:** Java (JDK 8 or higher)
-- **GUI Framework:** Java Swing & AWT (Native components, no external dependencies required)
-- **Design Pattern:** Object-Oriented Programming (OOP) with custom vector-graphics rendering
-
----
+## 🎨 Design & Palette
+The interface utilizes a tailored high-contrast pastel aesthetic to optimize UX scannability:
+- **Background:** Soft Pastel Pink (`#FFF0F2`)
+- **Accent/Base Elements:** Deep Berry Pink (`#D81B60`)
+- **Cards/Workspace:** Crisp Snow White (`#FFFFFF`)
+- **Typography:** Dark Cocoa Charcoal (`#423236`)
 
 ## 🚀 How to Run the Project
-1. Clone or download this repository to your local machine.
-2. Ensure you have the Java Development Kit (JDK) installed.
-3. Compile the main Java file using your terminal/IDE:
+1. Ensure you have **Java Development Kit (JDK 8 or higher)** installed on your machine.
+2. Download or clone this repository.
+3. Open your terminal or IDE in the root directory.
+4. Compile the program:
    ```bash
    javac Main.java
